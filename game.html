@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Game Canvas</title>
+    <link rel="stylesheet" href="game.css">
+    </style>
+
+  </head>
+  <body>
+
+    <canvas id="myCanvas" width="480" height="320"></canvas>
+
+    <script type="text/javascript">
+
+    var can = document.getElementById("myCanvas");
+    var ctx = can.getContext("2d");
+
+    var ballRadius = 10;
+    var x = can.width/2;
+    var y = can.height-30;
+    var dx = 2;
+    var dy = -2;
+
+    var paddleHeight = 10;
+    var paddleWidth = 75;
+    var paddleX = (can.width - paddleWidth)/2;
+    //var paddleY = can.height - paddleHeight;
+
+    var rightPressed = false;
+    var leftPressed = false;
+
+    var brickRowCount = 3;
+    var brickColumnCount = 5;
+    var brickWidth = 75;
+    var brickHeight = 20;
+    var brickPadding = 10;
+    var brickOffsetTop = 30;
+    var brickOffsetLeft = 30;
+
+    //score variable
+    var score = 0;
+    var lives = 3;//checking your life
+
+    var bricks = [];
+    for(c =0; c<brickColumnCount; c++){
+      bricks[c] = [];
+      for(r =0; r<brickRowCount; r++){
+        bricks[c][r] = {x:0, y:0, status:1};//status will be used to check if brick is there
+        //if status is 1 draw brick, if 0, it was hit by ball
+      }
+    }
+
+    function drawBricks() {
+      for(c =0; c<brickColumnCount; c++){
+        for( r =0; r<brickRowCount; r++){
+          //checking
+          if(bricks[c][r].status ==1){
+          var brickX = (c*(brickWidth+brickPadding)) + brickOffsetLeft;
+          var brickY = (r*(brickHeight + brickPadding)) + brickOffsetTop;
+          bricks[c][r].x = brickX;
+          bricks[c][r].y = brickY;
+          ctx.beginPath();
+          ctx.rect(brickX, brickY, brickWidth, brickHeight);
+          ctx.fillStyle = "#0095DD";
+          ctx.fill();
+          ctx.closePath();
+          }
+        }
+      }
+    }
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+      ctx.fillStyle ="red";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawPaddle() {
+      ctx.beginPath();
+      ctx. rect(paddleX, can.height-paddleHeight, paddleWidth, paddleHeight);
+      ctx.fillStyle = "#0095DD";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    //func to move ball
+    function draw() {
+      ctx.clearRect(0,0,can.width,can.height);
+      drawBricks();
+      drawBall();
+      drawPaddle();
+      brickDetection();
+      drawScore();
+      drawLives();
+
+
+      //stop ball for disappearing.
+      if((x + dx > can.width-ballRadius) ||(x + dx < ballRadius)){ //hits off the side of the wall
+        dx = -dx;
+      }
+
+      if(y + dy < ballRadius){// hits off the top
+        dy = -dy;
+      }
+      else if(y + dy > can.height-ballRadius){
+        //if ball is touching paddle/where the paddle is on the x axis
+        if(x > paddleX && x < paddleX + paddleWidth){
+          dy = -dy;
+        }
+        else{
+        //after game fixed then delete comemnts
+        lives--;
+        if(lives ==0) {
+            gameOver();
+        }
+        else {
+            x = can.width/2;
+            y = can.height-30;
+            dx = 2;
+            dy = -2;
+            paddleX = (can.width-paddleWidth)/2;
+          }
+        }
+      }
+
+
+      //paddle movements
+      if(rightPressed  && paddleX < can.width-paddleWidth){
+        paddleX +=7;
+      }
+      else if(leftPressed  && paddleX >0){
+        paddleX -=7;
+      }
+      x+= dx;
+      y+= dy;
+    }
+    //used to check if ball hits brick
+    function brickDetection() {
+      for (var col = 0; col < brickColumnCount; col++) {
+        for (var row =0; row < brickRowCount; row++){
+          var b = bricks[col][row];
+          if(b.status ==1){ //status ==1 checks if brick is currently active
+            //if active, check if ball is in position of brick
+            // if above is true, change position and delete brick
+            if (x > b.x && x < b.x+brickWidth && y > b.y && y<b.y+brickHeight ) {
+              dy = -dy;
+              b.status =0; //used to erase brick, or to not paint on screen
+              score++; // updating score
+              if(score == brickRowCount*brickColumnCount){
+                alert("YOU WIN! CONGRADULATIONS!!");
+                document.location.reload();
+              }
+            }
+          }
+        }
+      }
+    }
+    function gameOver() {
+      alert("Game Over!!");
+      document.location.reload();
+    }
+
+    function drawScore() {
+      ctx.font = "16px Arial";
+      ctx.fillstyle = "skyblue";
+      ctx.fillText("Score: " + score, 12, 20);
+    }
+
+    function drawLives() {
+      ctx.font = "16 Arial";
+      ctx.fillstyle = "skyblue";
+      ctx.fillText("Lives: " + lives, can.width-65, 20);
+    }
+    function keyDownHandler(e) {
+      if(e.keyCode == 39){
+        rightPressed = true;
+      }
+      else if (e.keyCode == 37) {
+        leftPressed = true;
+      }
+    }
+    function keyUpHandler(e) {
+      if(e.keyCode == 39){
+        rightPressed = false;
+      }
+      else if(e.keyCode == 37){
+        leftPressed = false;
+      }
+    }
+
+    //aditional function for mouse
+    function mouseMoveHandler(e) {  //can.offsetLeft ~ distance between left edge of canvas and left edge of viewport
+      //e.clientX ~ distance of mouse pointer
+      var relativeX = e.clientX - can.offsetLeft;
+      if (relativeX > 0 && relativeX < can.width){
+        paddleX = relativeX - paddleWidth/2;
+      }
+    }
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+    document.addEventListener("mousemove", mouseMoveHandler, false);
+
+    setInterval(draw, 12);
+/*  rectangle drawing
+    ctx.fillStyle = "skyblue";
+    ctx.fillRect(20,20,100,100);
+
+    //circle drawing
+    ctx.beginPath();
+    ctx.arc(190,175,20,0,Math.PI*2);
+    ctx.fillStyle ="green";
+    ctx.fill();
+    ctx.closePath();
+*/
+    </script>
+
+  </body>
+</html>
