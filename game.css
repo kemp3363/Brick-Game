@@ -1,6 +1,8 @@
-canvas{
-background-color:lightgrey;
+@media all and (max-width: 1600px), (max-height: 1200px) {
 
-margin-left: 380px;
+  canvas{
+    background-color:lightgrey;
+    margin-left: 380px;
 
+  }
 }
